@@ -7,12 +7,12 @@ $ENV{PATH} = "/bin:/usr/bin"; # Minimal PATH.
 
 use Net::DNSServer;
 use Net::DNSServer::Cache;
-use avahiResolver;
+use Net::DNSServer::avahiResolver;
 
 my %cache = ();
 
 my $resolver1 = new Net::DNSServer::Cache({ dns_cache => \%cache });
-my $resolver2 = new avahiResolver;
+my $resolver2 = new Net::DNSServer::avahiResolver;
 
 #$Net::DNSServer::Cache::expiration_check = time;
 

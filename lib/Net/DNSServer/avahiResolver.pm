@@ -1,4 +1,4 @@
-package avahiResolver;
+package Net::DNSServer::avahiResolver;
 
 use strict;
 use warnings;
