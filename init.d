@@ -1,0 +1,113 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          dns-to-avahi
+# Required-Start:    $remote_fs avahi
+# Required-Stop:     $remote_fs avahi
+# Should-Start:	     $syslog
+# Should-Stop:       $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Unicast DNS / mDNS Gateway Daemon
+# Description:       Resolve mDNS querys over standard unicast using the avahi
+#                    tools and perl. Thus this server can act as a gateway
+#                    server for non mDNS aware applications.
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DESC="Unicast DNS / mDNS Gateway Daemon"
+NAME="dns-to-avahi"
+DAEMON="/usr/sbin/$NAME"
+SCRIPTNAME=/etc/init.d/$NAME
+PID="/var/run/$NAME.pid"
+DEFAULTS_FILE="/etc/defaults/$NAME"
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+if [ -s $DEFAULTS_FILE ]; then
+    . $DEFAULTS_FILE
+fi
+
+#
+#       Function that starts the daemon/service.
+#
+d_start() {
+    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} -P ${PID} 
+    ec=$?
+    if [ -s $PID ] && kill -0 $(cat $PID) >/dev/null 2>&1; then
+       log_progress_msg "apparently already running"
+       log_end_msg 0
+       exit 0
+    fi
+    return $ec
+}
+
+#
+#       Function that stops the daemon/service.
+#
+d_stop() {
+   start-stop-daemon --stop --quiet --oknodo --pidfile $PID
+   ec=$?
+   rm -f $PID
+   return $ec
+}
+
+#
+#       Function that reload the config file for the daemon/service.
+#
+d_refresh() {
+   start-stop-daemon --stop --quiet --signal HUP --pidfile $PID
+   return $?
+}
+
+#
+#       Function that check the status of the daemon/service.
+#
+d_status() {
+    status_of_proc -p $PID "$DAEMON" $NAME
+    return $?
+}
+
+ec=0
+
+case "$1" in
+    start)
+        if [ "$DAEMON_ENABLE" == "Yes"]; then
+            log_daemon_msg "Starting $NAME daemon" "NAME"
+            d_start
+            log_end_msg $?
+	fi
+        ;;
+    stop)
+        log_daemon_msg "Stopping $DESC" "$NAME"
+        d_stop
+        ec=$?
+        log_end_msg $ec
+        ;;
+    reload|refresh)
+        log_daemon_msg "$1 $DESC" "$NAME"
+        d_refresh
+        ec=$?
+        log_end_msg $ec
+        ;;
+    restart|force-reload)
+        log_daemon_msg "Restarting $DESC" "$NAME"
+        d_stop
+        ec=$?
+        d_start
+        [ $? -gt 0 ] && ec=$?
+        log_end_msg $ec
+        ;;
+    status)
+        d_status
+	exit $?
+        ;;
+    *)
+        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload|refresh}" >&2
+        exit 1
+        ;;
+esac
+
+exit $ec
