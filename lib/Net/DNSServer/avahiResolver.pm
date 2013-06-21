@@ -123,6 +123,7 @@ sub resolve {
 			}
       			my $response_header = $response->header;
       			$response_header->aa(1); # Make Authoritative
+        		$response_header->qr(1);  # This is a response
 	     		return $response;
 		} else {
 			print STDERR "DEBUG: avahi-resolve failed ".$question->qname."\n";
