@@ -1,5 +1,6 @@
 package Net::DNSServer::avahiResolver;
 
+use 5.010000;
 use strict;
 use warnings;
 
@@ -10,7 +11,7 @@ use IPC::System::Simple qw(capturex $EXITVAL EXIT_ANY);
 use Carp qw(carp croak cluck);
 use Socket;
 
-
+our $VERSION = '0.01';
 
 use vars qw(@ISA);
 @ISA = qw(Net::DNSServer::Base);
@@ -123,7 +124,7 @@ sub resolve {
 			}
       			my $response_header = $response->header;
       			$response_header->aa(1); # Make Authoritative
-        		$response_header->qr(1);  # This is a response
+        		$response_header->qr(1); # This is a response
 	     		return $response;
 		} else {
 			print STDERR "DEBUG: avahi-resolve failed ".$question->qname."\n";
@@ -137,3 +138,55 @@ sub resolve {
     return undef;
 }
 
+1;
+__END__
+# Below is stub documentation for your module. You'd better edit it!
+
+=head1 NAME
+
+Net::DNSServer::avahiResolver - Perl extension for blah blah blah
+
+=head1 SYNOPSIS
+
+  use Net::DNSServer::avahiResolver;
+  blah blah blah
+
+=head1 DESCRIPTION
+
+Stub documentation for Net::DNSServer::avahiResolver, created by h2xs. It looks like the
+author of the extension was negligent enough to leave the stub
+unedited.
+
+Blah blah blah.
+
+=head2 EXPORT
+
+None by default.
+
+
+
+=head1 SEE ALSO
+
+Mention other useful documentation such as the documentation of
+related modules or operating system documentation (such as man pages
+in UNIX), or any relevant external documentation such as RFCs or
+standards.
+
+If you have a mailing list set up for your module, mention it here.
+
+If you have a web site set up for your module, mention it here.
+
+=head1 AUTHOR
+
+phill, E<lt>pc188@E<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2013 by phill
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.14.2 or,
+at your option, any later version of Perl 5 you may have available.
+
+
+=cut
