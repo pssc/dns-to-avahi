@@ -7,7 +7,7 @@ use warnings;
 use Exporter;
 use Net::DNSServer::Base;
 use Net::DNS::Packet;
-use IPC::System::Simple qw(capturex $EXITVAL EXIT_ANY);
+use IPC::Cmd qw(can_run run);
 use Carp qw(carp croak cluck);
 use Socket;
 
@@ -18,13 +18,18 @@ use vars qw(@ISA);
 
 my $default_ttl = 60;
 my $default_dom = "local";
+my $default_avahi = "avahi-resolve";
+my $default_child = 'DEFAULT';
 
 # Created and passed to Net::DNSServer->run()
 sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
+
+  $self->{avahi} = can_run($default_avahi) or warn '$default_avahi is not installed!';
   $self->{ttl} ||= $default_ttl;
   $self->{dom} ||= $default_dom;
+  $self->{child} ||= $default_child;
   $self->{nameservers} ||= do {
     # Determine me and my corresponding name server by default
     local $^W = 0;
@@ -55,11 +60,11 @@ sub resolve {
     my ($question) = $dns_packet->question();
     if ($question->qtype eq "A" || $question->qtype eq "PTR") {
         if ($question->qname =~ /\.$self->{dom}$/ || $question->qname =~ /\.in-addr\.arpa$/ || /^$self->{dom}$/) { 
-		print STDERR "DEBUG: Resloving via avahi-resolve ".$question->qname."\n";
+		print STDERR "DEBUG: Resloving via $self->{avahi} ".$question->qname."\n";
       		my $response = bless \%{$dns_packet}, "Net::DNS::Packet"
         	|| die "Could not initialize response packet";
 
-		my @args =();
+		my @args =( $self->{avahi} );
 		my $qname = $question->qname;
 		if ($question->qtype eq "PTR") {
 			#146.1.168.192.in-addr.arpa.
@@ -69,32 +74,33 @@ sub resolve {
         			print STDERR "Bad data in query name '$qname'\n"; # log this somewhere
 			}
 			
-			@args = ( "-4a" , $qname);
+			push @args, ( "-4a" , $qname);
 		} else {
 			if ($qname =~ /^([-\@\w.]+)$/) {
         			$qname = $1;
     			} else {
         			print STDERR "Bad data in query name '$qname'\n"; # log this somewhere
     			}
-			@args = ( "-4n" , $qname);
+			push @args, ( "-4n" , $qname);
 		}
 		
-		$SIG{'CHLD'} = 'DEFAULT'; # for Multi Single mode
-		my @output = capturex(EXIT_ANY, "avahi-resolve", @args );
+		$SIG{'CHLD'} = $self->{child}; # Reset Child Signal handler as we as work round for Single ie non forking Multi mode needed for a simple cache.
+		my ($ok,$err,$full,$output, $error) = run (command => \@args);
 
-		if ($EXITVAL != 0) {
-			print STDERR "avahi-resolve exit $?:$EXITVAL $!\n";
+		if (!$ok) {
+			print STDERR "$self->{avahi} exit $?:$err $!\n";
 			return undef
 		}
 
-		if ($#output < 0) {
-			print STDERR "avahi-resolve no output\n";
+		if ($#$full < 0) {
+			print STDERR "$self->{avahi} no output\n";
+			# FIXME check error
 			return undef
 		}
 
 		my $answer;
 
-		foreach my $line (@output) {
+		foreach my $line (@$full) {
 			chomp($line);
 			my @result = split(/\s+/,$line);
 			if ($#result == 1 and $result[0] eq $qname) {
@@ -102,7 +108,7 @@ sub resolve {
 				### FIXME check IP.. || name..
 				last;
 			} else {
-				print STDERR "DEBUG: avahi-resolve '$line':$#result\n";
+				print STDERR "DEBUG: $self->{avahi} '$line':$#result\n";
 			}
 		}
 		
