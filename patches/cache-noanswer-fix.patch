@@ -1,0 +1,36 @@
+--- /usr/share/perl5/Net/DNSServer/Cache.pm.old	2013-06-28 13:10:43.000000000 +0100
++++ /usr/share/perl5/Net/DNSServer/Cache.pm	2013-06-28 16:19:24.000000000 +0100
+@@ -133,8 +133,14 @@
+     push @s, $self->store_rrs($dns_packet->answer);
+     push @s, $self->store_rrs($dns_packet->authority);
+     push @s, $self->store_rrs($dns_packet->additional);
+-    print STDERR "DEBUG: Storing cache for [$key;structure]\n";
+-    $self -> {dns_cache} -> {"$key;structure"} = \@s;
++    if ($dns_packet->answer) {
++        push @s, $self->store_rrs($dns_packet->question);
++        print STDERR "DEBUG: Storing cache for [$key;structure]\n";
++        $self -> {dns_cache} -> {"$key;structure"} = \@s;
++    } else {
++	use Data::Dumper;
++        print STDERR "DEBUG: Not storing cache for [$key;structure]=".Dumper(@s)."\n";
++    }
+   }
+   $self->flush_expired_ttls;
+   return 1;
+@@ -151,6 +157,7 @@
+     my $key = join("\t",$rr->name.".",$rr->class,$rr->type);
+     my $rdatastr = $rr->rdatastr();
+     my $ttl = $rr->ttl();
++    print STDERR "DEBUG: Cache readord ttl $ttl:$key";
+     my $expiration = $ttl + time;
+     $answer_hash->{$key} ||= [];
+     push @{$answer_hash->{$key}},
+@@ -172,7 +179,7 @@
+ sub flush_expired_ttls {
+   my $self = shift;
+   my $now = time;
+-  return unless $now > $expiration_check;
++  return unless $expiration_check && $now > $expiration_check;
+   my ($next_expiration_check, $lookup, $cache);
+   $next_expiration_check = undef;
+   while (($lookup,$cache) = each %{ $self -> {dns_cache} }) {

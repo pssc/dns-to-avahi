@@ -1,0 +1,20 @@
+--- Net-DNSServer-0.11/lib/Net/DNSServer/Cache.pm	2002-04-29 11:59:08.000000000 +0100
++++ /home/pc188/Dropbox/Cache.pm	2013-06-27 18:20:13.000000000 +0100
+@@ -88,6 +88,9 @@
+   $response->push("additional",  @$additional_ref);
+ 
+   $self -> {net_server} -> {usecache} = 0;
++
++  # This is a response
++  $response->header->qr(1);
+   return $response;
+ }
+ 
+@@ -218,6 +221,7 @@
+   my $resolver2 = ... another resolver object ...;
+   run Net::DNSServer {
+     priority => [$resolver1,$resolver2],
++    server => { server_type => ['Single'] }, # No Forking for Cache to work.
+   };
+ 
+ =head1 DESCRIPTION
