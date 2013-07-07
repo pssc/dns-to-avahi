@@ -19,7 +19,7 @@ NAME="dns-to-avahi"
 DAEMON="/usr/sbin/$NAME"
 SCRIPTNAME=/etc/init.d/$NAME
 PID="/var/run/$NAME.pid"
-DEFAULTS_FILE="/etc/defaults/$NAME"
+DEFAULTS_FILE="/etc/default/$NAME"
 
 # Gracefully exit if the package has been removed.
 test -x $DAEMON || exit 0
@@ -34,7 +34,7 @@ fi
 #       Function that starts the daemon/service.
 #
 d_start() {
-    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} -P ${PID} 
+    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} --pidfile ${PID} $NAME
     ec=$?
     if [ -s $PID ] && kill -0 $(cat $PID) >/dev/null 2>&1; then
        log_progress_msg "apparently already running"
@@ -74,7 +74,7 @@ ec=0
 
 case "$1" in
     start)
-        if [ "$DAEMON_ENABLE" == "Yes"]; then
+        if [ "$DAEMON_ENABLE" = "Yes" ]; then
             log_daemon_msg "Starting $NAME daemon" "NAME"
             d_start
             log_end_msg $?

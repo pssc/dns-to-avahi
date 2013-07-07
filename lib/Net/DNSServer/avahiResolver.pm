@@ -26,7 +26,7 @@ sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
 
-  $self->{avahi} = can_run($default_avahi) or warn '$default_avahi is not installed!';
+  $self->{avahi} = can_run($default_avahi) or warn "$default_avahi is not installed!";
   $self->{ttl} ||= $default_ttl;
   $self->{dom} ||= $default_dom;
   $self->{child} ||= $default_child;
