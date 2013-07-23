@@ -34,13 +34,14 @@ fi
 #       Function that starts the daemon/service.
 #
 d_start() {
-    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} --pidfile ${PID}
-    ec=$?
     if [ -s $PID ] && kill -0 $(cat $PID) >/dev/null 2>&1; then
        log_progress_msg "apparently already running"
        log_end_msg 0
        exit 0
     fi
+    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} --pidfile ${PID}
+    ec=$?
+    chown $DUSER $PID 
     return $ec
 }
 
