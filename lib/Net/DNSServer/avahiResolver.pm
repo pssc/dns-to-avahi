@@ -98,7 +98,7 @@ sub resolve {
 			return undef
 		}
 
-		my $answer;
+		my $answer = undef;
 
 		foreach my $line (@$full) {
 			chomp($line);
@@ -108,11 +108,15 @@ sub resolve {
 				### FIXME check IP.. || name..
 				last;
 			} else {
-				print STDERR "DEBUG: $self->{avahi} '$line':$#result\n";
+				if ( $line =~ /^Failed to resolve address \'$qname\': Timeout reached/ ) {
+				    ### FIX Howlround caching needed
+				    $answer = "";
+				} else {
+				    print STDERR "DEBUG: $self->{avahi} '$line':$#result\n"; }
 			}
 		}
 		
-		if ($answer) {
+		if (defined($answer)) {
       			$response->push("answer",
                       		Net::DNS::RR->new
                        		("$qname $self->{ttl} $question->{qtype} $answer"));
