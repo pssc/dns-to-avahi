@@ -39,9 +39,9 @@ d_start() {
        log_end_msg 0
        exit 0
     fi
-    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} --pidfile ${PID}
+    start-stop-daemon --start --quiet --oknodo --exec $DAEMON -- -u ${DUSER:-nobody} -g ${DGROUP:-nogroup} --pidfile ${PID}
     ec=$?
-    chown $DUSER $PID 
+    [ $ec -eq 0 ] && chown $DUSER $PID 
     return $ec
 }
 
@@ -51,7 +51,7 @@ d_start() {
 d_stop() {
    start-stop-daemon --stop --quiet --oknodo --pidfile $PID
    ec=$?
-   rm -f $PID
+   [ $ec -eq 0 ] && rm -f $PID
    return $ec
 }
 
